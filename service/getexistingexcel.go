@@ -8,8 +8,193 @@ import (
 	"goexcel/model"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
+
+// UpdateExport is a function
+func UpdateExport(configmap map[string]interface{}) {
+	start :=configmap["start"].(string)
+	end := configmap["end"].(string)
+
+	importantfilename := configmap["importantfilename"].(string)
+	outfolder :=configmap["folder"].(map[string]string)["output"]
+	outfile :=outfolder+"/"+"exportmiddle.xlsx"
+	readfirstexportexcelfile := outfolder+"/"+configmap["firstexportexcelfile"].(string)
+	importantfile := outfolder+"/"+importantfilename
+	normaltmpperdayhour,err := strconv.ParseFloat(configmap["perdayhour"].(string),64)
+	special_regulationmap :=configmap["special_regulation"].(map[string]string)
+	special_regulation :=make(map[int64]float64)
+	for k,v :=range special_regulationmap{
+		gk, _ := strconv.ParseInt(k, 10, 64)
+		gv,_ := strconv.ParseFloat(v,64)
+		special_regulation[gk] = gv
+	}
+
+
+
+	log.Println("1-come into this readexport function，tmpregulation time is:",normaltmpperdayhour,special_regulation)
+	sheet :="考勤"
+	xlsx, err := excelize.OpenFile(readfirstexportexcelfile)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	log.Println("1-can open "+readfirstexportexcelfile+" file")
+	//start := "2019-09-23" //待转化为时间戳的字符串
+	//end := "2019-10-22"   //待转化为时间戳的字符串
+	////日期转化为时间戳
+	log.Println("get start time")
+	log.Println(start,end)
+	slice := PrDates(start,end)
+	log.Println("get slice is :",slice)
+	datelen := len(slice)
+	log.Println("before获取cmap")
+	cmap :=GetWhitelist(importantfile)
+	log.Println("after 获取cmap:",cmap)
+
+	//fmt.Println(cmap)
+	log.Println("获取cmap")
+	len :=cmap["len"].(int)
+	maxrowlen :=7*len+4
+	headslice := []string{"D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH"}
+	log.Println("2222222")
+	//xbgtype := getCellBgType(xlsx, sheet, "T96")
+	//log.Println("sssssssssssss-------",xbgtype)
+
+	defaultunsignbgtype := getCellBgType(xlsx, sheet, "G1")
+	defaulttiaoxiubgtype := getCellBgType(xlsx, sheet, "J1")
+	defaultsundaybgtype := getCellBgType(xlsx, sheet, "M1")
+	style, err := xlsx.NewStyle(`{"fill":{"type":"pattern","color":["#00ffe9"],"pattern":1}}`)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if defaultunsignbgtype=="solid" {
+		xlsx.SetCellStyle(sheet, "G1", "G1", style)
+	}
+	if defaulttiaoxiubgtype=="solid" {
+		style, err = xlsx.NewStyle(`{"fill":{"type":"pattern","color":["#836FFF"],"pattern":1}}`)
+		if err != nil {
+			fmt.Println(err)
+		}
+		xlsx.SetCellStyle(sheet, "J1", "J1", style)
+	}
+
+	if defaultsundaybgtype=="solid" {
+		style, err = xlsx.NewStyle(`{"fill":{"type":"pattern","color":["#DAA520"],"pattern":1}}`)
+		if err != nil {
+			fmt.Println(err)
+		}
+		xlsx.SetCellStyle(sheet, "M1", "M1", style)
+	}
+
+
+
+
+
+
+
+
+	for k := 4; k <= maxrowlen; k+=7 {
+
+		axis := "C"+strconv.Itoa(k)
+		useridstring ,_:= xlsx.GetCellValue(sheet,axis)
+		userid, _ := strconv.ParseInt(useridstring, 10, 64)
+		if userid==0 {
+			continue
+		}
+		for c := 0; c < datelen; c+=1 {
+
+			datenum :=slice[int64(c)]
+			weekend :=false
+			num :=ZellerFunction2Week(datenum)
+			if num==6 || num ==7 {
+				weekend = true
+			}
+			_, ok := special_regulation[userid]
+			if ok && weekend {
+				style, err = xlsx.NewStyle(`{"fill":{"type":"pattern","color":["#DAA520"],"pattern":1},"alignment":{"horizontal":"center","wrap_text":true}}`)
+				if err != nil {
+					fmt.Println(err)
+				}
+				dateaxis := headslice[c]+strconv.Itoa(k-1)
+				xlsx.SetCellStyle(sheet, dateaxis, dateaxis, style)
+			}
+
+			firstaxis := headslice[c]+strconv.Itoa(k+1)
+			firstbgtype := getCellBgType(xlsx, sheet, firstaxis)
+
+
+			if firstbgtype=="solid" {
+				firstval ,_:= xlsx.GetCellValue(sheet,firstaxis)
+				if strings.Index(firstval, "：") > -1 {
+					firstval = strings.Replace(firstval, "：", ":", -1)
+				}
+				xlsx.SetCellValue(sheet,firstaxis , firstval)
+
+				style, err = xlsx.NewStyle(`{"fill":{"type":"pattern","color":["#00ffe9"],"pattern":1}}`)
+				if err != nil {
+					fmt.Println(err)
+				}
+				xlsx.SetCellStyle(sheet, firstaxis, firstaxis, style)
+
+			}
+			lastaxis := headslice[c]+strconv.Itoa(k+2)
+			lastbgtype := getCellBgType(xlsx, sheet, lastaxis)
+
+			if lastbgtype=="solid" {
+
+				lastval ,_:= xlsx.GetCellValue(sheet,lastaxis)
+				if strings.Index(lastval, "：") > -1 {
+					lastval = strings.Replace(lastval, "：", ":", -1)
+				}
+				xlsx.SetCellValue(sheet,lastaxis , lastval)
+				style, err = xlsx.NewStyle(`{"fill":{"type":"pattern","color":["#00ffe9"],"pattern":1}}`)
+				if err != nil {
+					fmt.Println(err)
+				}
+				xlsx.SetCellStyle(sheet, lastaxis, lastaxis, style)
+
+			}
+			//if userid ==505 {
+			//	log.Println("aaaaaa:----",datenum,firstbgtype,lastbgtype)
+			//}
+
+
+		}
+		rowline := strconv.Itoa(k+4)
+
+		style, err = xlsx.NewStyle(`{"fill":{"type":"pattern","color":["#FF0000"],"pattern":1}}`)
+		if err != nil {
+			fmt.Println(err)
+		}
+		xlsx.SetCellStyle(sheet, "D"+rowline, "D"+rowline, style)
+
+	}
+
+
+	//style, err = xlsx.NewStyle(`{"alignment":{"horizontal":"center","wrap_text":true}}`)
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
+	//xlsx.SetCellStyle(sheet, "A1", "AH"+strconv.Itoa(maxrowlen), style)
+	//
+
+	for index:=1;index<=maxrowlen;index++{
+		xlsx.SetRowHeight(sheet,index,30)
+	}
+	xlsx.SetColWidth(sheet,"A","AH",9)
+
+	// 根据指定路径保存文件
+	err = xlsx.SaveAs(outfile)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	log.Println("最后一步保存excel成功")
+
+}
+
 
 //ReadExport is a function
 func ReadExport(configmap map[string]interface{}) {
@@ -346,6 +531,13 @@ func getCellBgColor(xlsx *excelize.File, sheet, axix string) string {
 		return excelize.ThemeColor(srgbClr, fgColor.Tint)
 	}
 	return fgColor.RGB
+}
+
+func getCellBgType(xlsx *excelize.File, sheet, axix string) string {
+	styleID,_:= xlsx.GetCellStyle(sheet, axix)
+	fillID := xlsx.Styles.CellXfs.Xf[styleID].FillID
+	patterntype := xlsx.Styles.Fills.Fill[fillID].PatternFill.PatternType
+	return patterntype
 }
 
 

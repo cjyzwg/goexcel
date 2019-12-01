@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>jQuery.smartList-表格插件</title>
+    
+<style type="text/css">
+	html,body{margin:0px;padding:0px;font-family:微软雅黑;font-size:12px;}
+	.main{width:960px;margin:0 auto;}
+	.main>hr{margin-bottom:20px;}
+	
+	/*表格默认样式*/
+	table{border:1px solid #ccc;border-collapse:collapse;}
+	table tr td{border:1px solid #ccc;padding:5px 10px;}
+	table tr th{border:1px solid #ccc;padding:5px 10px;background-color:#BB7744;color:#fff;}
+	table tr td:hover{background-color:#eee;}
+	#delbtn>span:hover{cursor:pointer;}
+	
+	/*容器Div样式 任意修改*/
+	.smartTableDiv{padding:10px;margin:20px auto;}
+</style>
+</head>
+<body>
+<div class="main">
+<h1>打卡excel配置文件</h1>
+<hr/>
+    <div class="showbtn"><button type="button" onclick="getdocuplexport(1);">生成第一次excel</button></div>
+    <div class="showbtn">
+        <div id="changhuadiv">
+            <h3>上传修改过后的excel文件</h3>
+            <input type="file" name="export" id="export" value="" >
+            <input type="button" onclick="getdocuplexport(2);" value="生成第二次excel" name="" style="width:100px;height:30px;">
+        </div>
+    </div>
+    <div><button type="button" onclick="skip(0)">开始</button></div>
+    <div class="nodisplay" id="da">
+        <h3>日期</h3>
+        <!-- 表格容器 -->
+        <div class="smartTableDivda"></div>
+    </div>
+    <div class="nodisplay" id="folder">
+        <h3>文件夹</h3>
+        <!-- 表格容器 -->
+        <div class="smartTableDivfolder"></div>
+    </div>
+
+    <div class="nodisplay" id="excelfile">
+        <div id="changhuadiv">
+            <h3>上传第一个文件</h3>
+            <input type="file" name="changhua" id="changhua" value="" >
+            <input type="button" onclick="upload(this);" value="上传" name="" style="width:100px;height:30px;">
+        </div>
+        <div id="pudongdiv">
+            <h3>上传第二个文件</h3>
+            <input type="file" name="pudong" id="pudong" value="" >
+            <input type="button" onclick="upload(this);" value="上传" name="" style="width:100px;height:30px;">
+        </div>
+        <div id="maomingdiv">
+            <h3>上传第三个文件</h3>
+            <input type="file" name="maoming" id="maoming" value="" >
+            <input type="button" onclick="upload(this);" value="上传" name="" style="width:100px;height:30px;">
+        </div>
+        <div id="dingdingdiv">
+            <h3>上传第四个文件</h3>
+            <input type="file" name="dingding" id="dingding" value="" >
+            <input type="button" onclick="upload(this);" value="上传" name="" style="width:100px;height:30px;">
+        </div>
+        <h3>文件</h3>
+        <!-- 表格容器 -->
+        <div class="smartTableDivexcelfile"></div>
+    </div>
+
+    <div class="nodisplay" id="exportexcelfile">
+        <h3>导出文件</h3>
+        <!-- 表格容器 -->
+        <div class="smartTableDivexportexcelfile"></div>
+    </div>
+
+    <div  class="nodisplay" id="regulation">
+        <h3>工作时长</h3>
+        <!-- 表格容器 -->
+        <div class="smartTableDivregulation"></div>
+    </div>
+
+    <div  class="nodisplay" id="special_regulation">
+        <h3>特殊人员时长</h3>
+        <!-- 表格容器 -->
+        <div class="smartTableDivspecial_regulation"></div>
+    </div>
+
+    <div  class="nodisplay" id="userorder">
+        <h3>用户顺序</h3>
+        <!-- 表格容器 -->
+        <div class="smartTableDivuserorder"></div>
+    </div>
+    <div  class="nodisplay" id="allpeople">
+        <!-- 表格容器 -->
+        <div class="smartTableDivchanghua"></div>
+        <!-- 表格容器 -->
+        <div class="smartTableDivpudong"></div>
+        <!-- 表格容器 -->
+        <div class="smartTableDivmaoming"></div>
+        <!-- 表格容器 -->
+        <div class="smartTableDivdingding"></div>
+    </div>
+</div>
+<script src="js/jquery-1.7.2.js"></script>
+<script src="js/jquery.smartTable-2.0.js"></script>
+<script type="text/javascript">
+
+        $(".showbtn").hide();
+        $(".nodisplay").hide();
+        // listData();
+		function listData(){
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8089/ajax',
+                // data:{"new_id":data.new_id},
+                success: function (data) {
+                    var jsonobj = JSON.parse(data);
+                    console.log(jsonobj);
+                    var t1 = {
+                        data : [ //表格内json数据,可为空
+                            {th:"开始日期",td:[jsonobj["start"]]},
+                            {th:"结束日期",td:[jsonobj["end"]]},
+                        ]
+                    };
+
+                    $(".smartTableDivda").smartTable({
+                        editText:true, //是否可编辑单元格内容
+                        editRow :false, //是否可操作单元行，添加或删除
+                        addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                        delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                        tableContent:t1.data
+                    });
+
+
+                    var t2 = {
+                        data : [ //表格内json数据,可为空
+                            {th:"输入文件夹",td:[jsonobj["folder"]["input"]]},
+                            {th:"输出文件夹",td:[jsonobj["folder"]["output"]]},
+                        ]
+                    };
+
+                    $(".smartTableDivfolder").smartTable({
+                        editText:true, //是否可编辑单元格内容
+                        editRow :false, //是否可操作单元行，添加或删除
+                        addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                        delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                        tableContent:t2.data
+                    });
+
+
+
+
+                    var t3 = {
+                        data : [ //表格内json数据,可为空
+                            {th:"changhua",td:[jsonobj["changhuaexcelfile"]]},
+                            {th:"pudong",td:[jsonobj["pudongexcelfile"]]},
+                            {th:"maoming",td:[jsonobj["maomingexcelfile"]]},
+                            {th:"dingding",td:[jsonobj["dingdingexcelfile"]]},
+                        ]
+                    };
+
+                    $(".smartTableDivexcelfile").smartTable({
+                        editText:true, //是否可编辑单元格内容
+                        editRow :false, //是否可操作单元行，添加或删除
+                        addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                        delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                        tableContent:t3.data
+                    });
+
+
+
+
+                    var t4 = {
+                        data : [ //表格内json数据,可为空
+                            {th:"firstexportexcelfile",td:[jsonobj["firstexportexcelfile"]]},
+                            {th:"secondexportexcelfile",td:[jsonobj["secondexportexcelfile"]]},
+                        ]
+                    };
+
+                    $(".smartTableDivexportexcelfile").smartTable({
+                        editText:true, //是否可编辑单元格内容
+                        editRow :false, //是否可操作单元行，添加或删除
+                        addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                        delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                        tableContent:t4.data
+                    });
+
+                    var t5 = {
+                        data : [ //表格内json数据,可为空
+                            {th:"每天工作时长",td:[jsonobj["perdayhour"]]},
+                        ]
+                    };
+
+                    $(".smartTableDivregulation").smartTable({
+                        editText:true, //是否可编辑单元格内容
+                        editRow :false, //是否可操作单元行，添加或删除
+                        addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                        delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                        tableContent:t5.data
+                    });
+                    var special_regulation = jsonobj["special_regulation"];
+                    var td1 = [];
+                    var td2 = [];
+                    var td3 = [];
+                    for (var x in special_regulation){
+                        td1.push(x);
+                        td2.push(jsonobj["userinfo"][x]);
+                        td3.push(special_regulation[x]);
+                    }
+                    var t6 = {
+                        data : [ //表格内json数据,可为空
+                            {th:"用户编号",td:td1},
+                            {th:"用户姓名",td:td2},
+                            {th:"用户每天工作时长",td:td3},
+                        ]
+                    };
+
+                    $(".smartTableDivspecial_regulation").smartTable({
+                        editText:true, //是否可编辑单元格内容
+                        editRow :true, //是否可操作单元行，添加或删除
+                        addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                        delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                        tableContent:t6.data
+                    });
+
+                    var gouserorderslice = jsonobj["gouserorderslice"];
+                    var td1 = [];
+                    var td2 = [];
+                    for (var x in gouserorderslice){
+                        td1.push(gouserorderslice[x]);
+                        td2.push(jsonobj["userinfo"][gouserorderslice[x]]);
+                    }
+                    var t7 = {
+                        data : [ //表格内json数据,可为空
+                            {th:"用户顺序",td:td1},
+                            {th:"用户姓名",td:td2},
+                        ]
+                    };
+
+                    $(".smartTableDivuserorder").smartTable({
+                        editText:true, //是否可编辑单元格内容
+                        editRow :true, //是否可操作单元行，添加或删除
+                        addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                        delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                        tableContent:t7.data
+                    });
+
+
+                    var newmaomingpeople = jsonobj["newmaomingpeople"];
+                    var td1 = [];
+                    var td2 = [];
+                    var td3 = [];
+                    for (var x in newmaomingpeople){
+                        td1.push(x);
+                        td2.push(newmaomingpeople[x]);
+                        td3.push(jsonobj["userinfo"][newmaomingpeople[x]]);
+                    }
+                    var t8 = {
+                        data : [ //表格内json数据,可为空
+                            {th:"打卡机编号",td:td1},
+                            {th:"crm系统编号",td:td2},
+                            {th:"用户姓名",td:td3},
+                        ]
+                    };
+
+                    $(".smartTableDivmaoming").smartTable({
+                        editText:true, //是否可编辑单元格内容
+                        editRow :true, //是否可操作单元行，添加或删除
+                        addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                        delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                        tableContent:t8.data
+                    });
+
+                    var newchanghuapeople = jsonobj["newchanghuapeople"];
+                    var td1 = [];
+                    var td2 = [];
+                    var td3 = [];
+                    for (var x in newchanghuapeople){
+                        td1.push(x);
+                        td2.push(newchanghuapeople[x]);
+                        td3.push(jsonobj["userinfo"][newchanghuapeople[x]]);
+                    }
+                    var t9 = {
+                        data : [ //表格内json数据,可为空
+                            {th:"打卡机编号",td:td1},
+                            {th:"crm系统编号",td:td2},
+                            {th:"用户姓名",td:td3},
+                        ]
+                    };
+
+                    $(".smartTableDivchanghua").smartTable({
+                        editText:true, //是否可编辑单元格内容
+                        editRow :true, //是否可操作单元行，添加或删除
+                        addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                        delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                        tableContent:t9.data,
+                        checkzerocontent: true
+                    });
+
+                    var dingdingpeople = jsonobj["dingdingpeople"];
+                    var td1 = [];
+                    var td2 = [];
+                    var td3 = [];
+                    for (var x in dingdingpeople){
+                        td1.push(x);
+                        td2.push(dingdingpeople[x]);
+                        td3.push(jsonobj["userinfo"][dingdingpeople[x]]);
+                    }
+                    var t10 = {
+                        data : [ //表格内json数据,可为空
+                            {th:"打卡机编号",td:td1},
+                            {th:"crm系统编号",td:td2},
+                            {th:"用户姓名",td:td3},
+                        ]
+                    };
+
+                    $(".smartTableDivdingding").smartTable({
+                        editText:true, //是否可编辑单元格内容
+                        editRow :true, //是否可操作单元行，添加或删除
+                        addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                        delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                        tableContent:t10.data
+                    });
+
+                    var newpudongpeople = jsonobj["newpudongpeople"];
+                    var td1 = [];
+                    var td2 = [];
+                    var td3 = [];
+                    for (var x in newpudongpeople){
+                        td1.push(x);
+                        td2.push(newpudongpeople[x]);
+                        td3.push(jsonobj["userinfo"][newpudongpeople[x]]);
+                    }
+                    var t11 = {
+                        data : [ //表格内json数据,可为空
+                            {th:"打卡机编号",td:td1},
+                            {th:"crm系统编号",td:td2},
+                            {th:"用户姓名",td:td3},
+                        ]
+                    };
+
+                    $(".smartTableDivpudong").smartTable({
+                        editText:true, //是否可编辑单元格内容
+                        editRow :true, //是否可操作单元行，添加或删除
+                        addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                        delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                        tableContent:t11.data
+                    });
+
+
+
+                }
+            });
+        }
+
+
+        function skip(i) {
+		    var lastindex = i;
+
+            var all = {};
+            all.skip = i;
+            var name = $(".needtoremove").parent().attr('id');
+            all.typename = name;
+
+            if(i==2){
+                // var jsonData = $(".smartTableDiv"+name).smartTable.getData("smartTableDiv"+name);//调用获取数据接口
+                // var jsonData = $(".smartTableDivda").smartTable.getData("smartTableDivda");//调用获取数据接口
+                if(name=="da"){
+                    all.start = $(".smartTableDiv"+name).find('td')[0].innerText;
+                    all.end = $(".smartTableDiv"+name).find('td')[1].innerText;
+                }
+                if(name=="folder"){
+                    all.input = $(".smartTableDiv"+name).find('td')[0].innerText;
+                    all.output = $(".smartTableDiv"+name).find('td')[1].innerText;
+                }
+                if(name=="excelfile"){
+                    if($(".smartTableDivexcelfile").find("td")[0].innerText!="" && $(".smartTableDivexcelfile").find("td")[0].innerText!="--"){
+                        all.changhuaexcelfile = $(".smartTableDiv"+name).find('td')[0].innerText;
+                    }
+                    if($(".smartTableDivexcelfile").find("td")[1].innerText!="" && $(".smartTableDivexcelfile").find("td")[1].innerText!="--"){
+                        all.pudongexcelfile = $(".smartTableDiv"+name).find('td')[1].innerText;
+                    }
+                    if($(".smartTableDivexcelfile").find("td")[2].innerText!="" && $(".smartTableDivexcelfile").find("td")[2].innerText!="--"){
+                        all.maomingexcelfile = $(".smartTableDiv"+name).find('td')[2].innerText;
+                    }
+                    if($(".smartTableDivexcelfile").find("td")[3].innerText!="" && $(".smartTableDivexcelfile").find("td")[3].innerText!="--"){
+                        all.dingdinngexcelfile = $(".smartTableDiv"+name).find('td')[3].innerText;
+                    }
+                }
+                if(name=="exportexcelfile"){
+                    all.firstexportexcelfile = $(".smartTableDiv"+name).find('td')[0].innerText;
+                    all.secondexportexcelfile = $(".smartTableDiv"+name).find('td')[1].innerText;
+                }
+                if(name=="regulation"){
+                    all.perdayhour = $(".smartTableDiv"+name).find('td')[0].innerText;
+                }
+                if(name=="userorder"){
+                    var tdarr = $(".smartTableDiv"+name).find('tbody').children('tr');
+                    var arr = [];
+                    var userorderslice = "";
+                    for (var i = 0; i < tdarr.length; i++) {
+                        var x = {};
+                        x.cid = tdarr[i].children[0].innerText;
+                        x.name = tdarr[i].children[1].innerText;
+                        arr[i] = x;
+                        userorderslice+=x.cid+","
+                    }
+                    str = userorderslice.substr(0,userorderslice.length-1);
+                    all.userorder = arr;
+                    all.userorderslice = str;
+                }
+                if(name=="special_regulation"){
+                    var tdarr = $(".smartTableDiv"+name).find('tbody').children('tr');
+                    var arr = [];
+                    for (var i = 0; i < tdarr.length; i++) {
+                        var x = {};
+                        x.cid = tdarr[i].children[0].innerText;
+                        x.hour = tdarr[i].children[2].innerText;
+                        arr[i] = x;
+                    }
+                    all.special_regulation = arr;
+                }
+                if(name=="allpeople"){
+                    var tdarr = $(".smartTableDivchanghua").find('tbody').children('tr');
+                    var arr = [];
+                    for (var i = 0; i < tdarr.length; i++) {
+                        var x = {};
+                        x.id = tdarr[i].children[0].innerText;
+                        x.cid = tdarr[i].children[1].innerText;
+                        arr[i] = x;
+                    }
+                    all.changhua = arr;
+
+                    var tdarr = $(".smartTableDivpudong").find('tbody').children('tr');
+                    var arr = [];
+                    for (var i = 0; i < tdarr.length; i++) {
+                        var x = {};
+                        x.id = tdarr[i].children[0].innerText;
+                        x.cid = tdarr[i].children[1].innerText;
+                        arr[i] = x;
+                    }
+                    all.pudong = arr;
+
+                    var tdarr = $(".smartTableDivmaoming").find('tbody').children('tr');
+                    var arr = [];
+                    for (var i = 0; i < tdarr.length; i++) {
+                        var x = {};
+                        x.id = tdarr[i].children[0].innerText;
+                        x.cid = tdarr[i].children[1].innerText;
+                        arr[i] = x;
+                    }
+                    all.maoming = arr;
+
+                    var tdarr = $(".smartTableDivdingding").find('tbody').children('tr');
+                    var arr = [];
+                    for (var i = 0; i < tdarr.length; i++) {
+                        var x = {};
+                        x.id = tdarr[i].children[0].innerText;
+                        x.cid = tdarr[i].children[1].innerText;
+                        arr[i] = x;
+                    }
+                    all.dingding = arr;
+
+
+                }
+
+
+            }
+            $.ajax({
+                type: 'post',
+                url: 'http://localhost:8089/test',
+                data:JSON.stringify(all),
+                success: function (data) {
+                    $(".nodisplay").hide();
+                    $(".needtoremove").remove();
+                    var rst = JSON.parse(data)
+                    if(rst["typename"]=="da"){
+                        var t1 = {
+                            data : [ //表格内json数据,可为空
+                                {th:"开始日期",td:[rst["start"]]},
+                                {th:"结束日期",td:[rst["end"]]},
+                            ]
+                        };
+
+                        $(".smartTableDivda").smartTable({
+                            editText:true, //是否可编辑单元格内容
+                            editRow :false, //是否可操作单元行，添加或删除
+                            addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                            delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                            tableContent:t1.data
+                        });
+
+                    }
+                    else if(rst["typename"]=="folder"){
+                        var t2 = {
+                            data : [ //表格内json数据,可为空
+                                {th:"输入文件夹",td:[rst["input"]]},
+                                {th:"输出文件夹",td:[rst["output"]]},
+                            ]
+                        };
+
+                        $(".smartTableDivfolder").smartTable({
+                            editText:true, //是否可编辑单元格内容
+                            editRow :false, //是否可操作单元行，添加或删除
+                            addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                            delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                            tableContent:t2.data
+                        });
+                    }
+                    else if(rst["typename"]=="excelfile"){
+                        var t3 = {
+                            data : [ //表格内json数据,可为空
+                                {th:"1excel",td:[rst['changhua']]},
+                                {th:"2excel",td:[rst['pudong']]},
+                                {th:"3excel",td:[rst['maoming']]},
+                                {th:"4excel",td:[rst['dingding']]},
+                            ]
+                        };
+
+                        $(".smartTableDivexcelfile").smartTable({
+                            editText:true, //是否可编辑单元格内容
+                            editRow :false, //是否可操作单元行，添加或删除
+                            addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                            delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                            tableContent:t3.data
+                        });
+                    }
+                    else if(rst["typename"]=="exportexcelfile"){
+                        var t4 = {
+                            data : [ //表格内json数据,可为空
+                                {th:"firstexportexcelfile",td:[rst["firstexportexcelfile"]]},
+                                {th:"secondexportexcelfile",td:[rst["secondexportexcelfile"]]},
+                            ]
+                        };
+
+                        $(".smartTableDivexportexcelfile").smartTable({
+                            editText:true, //是否可编辑单元格内容
+                            editRow :false, //是否可操作单元行，添加或删除
+                            addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                            delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                            tableContent:t4.data
+                        });
+                    }
+                    else if(rst["typename"]=="regulation"){
+                        var t5 = {
+                            data : [ //表格内json数据,可为空
+                                {th:"每天工作时长",td:[rst["perdayhour"]]},
+                            ]
+                        };
+
+                        $(".smartTableDivregulation").smartTable({
+                            editText:true, //是否可编辑单元格内容
+                            editRow :false, //是否可操作单元行，添加或删除
+                            addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                            delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                            tableContent:t5.data
+                        });
+                    }
+                    else if(rst["typename"]=="userorder"){
+                        var gouserorderslice = rst["gouserorder"].split(',');
+                        var td1 = [];
+                        var td2 = [];
+                        for (var x in gouserorderslice){
+                            td1.push(gouserorderslice[x]);
+                            td2.push(rst[gouserorderslice[x]]);
+                        }
+                        var t7 = {
+                            data : [ //表格内json数据,可为空
+                                {th:"用户顺序",td:td1},
+                                {th:"用户姓名",td:td2},
+                            ]
+                        };
+
+                        $(".smartTableDivuserorder").smartTable({
+                            editText:true, //是否可编辑单元格内容
+                            editRow :true, //是否可操作单元行，添加或删除
+                            addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                            delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                            tableContent:t7.data
+                        });
+                    }
+                    else if(rst["typename"]=="special_regulation"){
+                        var userinfo = JSON.parse(rst["userinfo"].replace(/\'/g,"\""));
+                        delete rst["typename"];
+                        delete rst["userinfo"];
+                        var special_regulation = rst;
+                        var td1 = [];
+                        var td2 = [];
+                        var td3 = [];
+                        for (var x in special_regulation){
+                            td1.push(x);
+                            td2.push(userinfo[x]);
+                            td3.push(special_regulation[x]);
+                        }
+                        var t6 = {
+                            data : [ //表格内json数据,可为空
+                                {th:"编号",td:td1},
+                                {th:"姓名",td:td2},
+                                {th:"工作时长",td:td3},
+                            ]
+                        };
+
+                        $(".smartTableDivspecial_regulation").smartTable({
+                            editText:true, //是否可编辑单元格内容
+                            editRow :true, //是否可操作单元行，添加或删除
+                            addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                            delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                            tableContent:t6.data
+                        });
+                        rst["typename"] = "special_regulation";
+                    }
+                    else if(rst["typename"]=="allpeople"){
+                        var userinfo = JSON.parse(rst["userinfo"].replace(/\'/g,"\""));
+                        if(rst["changhua"]!=undefined){
+                            var newchanghuapeople = JSON.parse(rst["changhua"].replace(/\'/g,"\""));
+                            var td1 = [];
+                            var td2 = [];
+                            var td3 = [];
+                            for (var x in newchanghuapeople){
+                                td1.push(x);
+                                td2.push(newchanghuapeople[x]);
+                                td3.push(userinfo[newchanghuapeople[x]]);
+                            }
+                            var t9 = {
+                                data : [ //表格内json数据,可为空
+                                    {th:"编号",td:td1},
+                                    {th:"系统编号",td:td2},
+                                    {th:"用户姓名",td:td3},
+                                ]
+                            };
+
+                            $(".smartTableDivchanghua").smartTable({
+                                editText:true, //是否可编辑单元格内容
+                                editRow :true, //是否可操作单元行，添加或删除
+                                addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                                delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                                tableContent:t9.data,
+                                checkzerocontent: true
+                            });
+                        }
+                        if(rst["pudong"]!=undefined){
+                            var newpudongpeople = JSON.parse(rst["pudong"].replace(/\'/g,"\""));
+                            var td1 = [];
+                            var td2 = [];
+                            var td3 = [];
+                            for (var x in newpudongpeople){
+                                td1.push(x);
+                                td2.push(newpudongpeople[x]);
+                                td3.push(userinfo[newpudongpeople[x]]);
+                            }
+                            var t10 = {
+                                data : [ //表格内json数据,可为空
+                                    {th:"编号",td:td1},
+                                    {th:"系统编号",td:td2},
+                                    {th:"用户姓名",td:td3},
+                                ]
+                            };
+
+                            $(".smartTableDivpudong").smartTable({
+                                editText:true, //是否可编辑单元格内容
+                                editRow :true, //是否可操作单元行，添加或删除
+                                addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                                delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                                tableContent:t10.data,
+                                checkzerocontent: true
+                            });
+                        }
+                        if(rst["maoming"]!=undefined){
+                            var newmaomingpeople = JSON.parse(rst["maoming"].replace(/\'/g,"\""));
+                            var td1 = [];
+                            var td2 = [];
+                            var td3 = [];
+                            for (var x in newmaomingpeople){
+                                td1.push(x);
+                                td2.push(newmaomingpeople[x]);
+                                td3.push(userinfo[newmaomingpeople[x]]);
+                            }
+                            var t11 = {
+                                data : [ //表格内json数据,可为空
+                                    {th:"编号",td:td1},
+                                    {th:"系统编号",td:td2},
+                                    {th:"用户姓名",td:td3},
+                                ]
+                            };
+
+                            $(".smartTableDivmaoming").smartTable({
+                                editText:true, //是否可编辑单元格内容
+                                editRow :true, //是否可操作单元行，添加或删除
+                                addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                                delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                                tableContent:t11.data,
+                                checkzerocontent: true
+                            });
+                        }
+                        if(rst["dingding"]!=undefined){
+                            var newdingdingpeople = JSON.parse(rst["dingding"].replace(/\'/g,"\""));
+                            var td1 = [];
+                            var td2 = [];
+                            var td3 = [];
+                            for (var x in newdingdingpeople){
+                                td1.push(x);
+                                td2.push(newdingdingpeople[x]);
+                                td3.push(userinfo[newdingdingpeople[x]]);
+                            }
+                            var t12 = {
+                                data : [ //表格内json数据,可为空
+                                    {th:"编号",td:td1},
+                                    {th:"系统编号",td:td2},
+                                    {th:"用户姓名",td:td3},
+                                ]
+                            };
+
+                            $(".smartTableDivdingding").smartTable({
+                                editText:true, //是否可编辑单元格内容
+                                editRow :true, //是否可操作单元行，添加或删除
+                                addBtnBg:["url(image/addbtn.png) no-repeat","url(image/addbtn_hover.png)"],//添加按钮自定义，若覆盖和移除背景相同，两项需写一样的内容
+                                delBtnBg:["url(image/delete.png) 2px 6px no-repeat", "url(image/delete.png) 2px 6px no-repeat"],//删除按钮自定义
+                                tableContent:t12.data,
+                                checkzerocontent: true
+                            });
+                        }
+
+                    }
+                    if(rst["Typename"]=="finish"){
+                        alert("配置项已经填写完成了");
+                        $(".nodisplay").show();
+                        if(lastindex==0){
+                            listData();
+                        }
+                        $(".showbtn").show();
+                    }else{
+                        if(rst["typename"]!="allpeople"){
+                            $('.smartTableDiv'+rst["typename"]).after('<div class="needtoremove"><button class="editfinish" onclick="skip(2);">修改完成</button></div>');
+                            if(rst["typename"]=="da" || rst["typename"]=="folder" || rst["typename"]=="exportexcelfile"){
+                                var needname = rst["typename"];
+                                $(".needtoremove").append('<button class="auto_'+needname+'" onclick="autoedit(this);">自动校准为当前日期</button>')
+                            }
+
+
+
+                        }else{
+                            $("#allpeople").append('<div class="needtoremove"><button class="editfinish" onclick="skip(2);">修改完成</button></div>');
+                        }
+                        // console.log(rst["typename"])
+                        $("#"+rst["typename"]).show();
+
+
+                    }
+
+
+
+                }
+            });
+        }
+
+        function autoedit(id){
+            // var domname = $(id).prev().attr("id");//domname = "changhua"
+            var classname = $(id).attr("class");
+            var myDate = new Date();
+
+            var year=myDate.getFullYear();        //获取当前年
+            var lastmonth=myDate.getMonth();   //获取当前的上个月
+            var day=myDate.getDate();            //获取当前日
+
+            var tempmonth = lastmonth;
+            var tsmonth = lastmonth;
+            var tsyear = year;
+            if(lastmonth==0){
+                tempmonth = 12;
+                tsmonth = lastmonth+1;
+                tsyear = year-1;
+            }else{
+                tempmonth = lastmonth;
+                tsmonth = lastmonth+1;
+
+            }
+            var fs = tempmonth < 10 ? '0' + tempmonth: tempmonth;
+            var ts = tsmonth < 10 ? '0' + tsmonth: tsmonth;
+
+            var fromstr = tsyear+"-"+fs+"-23";
+            var folderstr = tsyear+"-"+fs;
+            var tostr = year+"-"+ts+"-22";
+            if(day<=22) {
+                var tsmonth = lastmonth;
+                if(lastmonth==0){
+                    tempmonth = 11
+                    year = year-1;
+                    tsmonth = 12;
+                }else{
+                    if(lastmonth==1){
+                        tempmonth = 12;
+                        tsyear = year-1;
+                    }else{
+                        tempmonth = lastmonth-1;
+                    }
+
+                }
+                fs = tempmonth < 10 ? '0' + tempmonth: tempmonth;
+                ts = tsmonth < 10 ? '0' + tsmonth: tsmonth;
+                fromstr = tsyear+"-"+fs+"-23";
+                folderstr = tsyear+"-"+fs;
+                tostr = year+"-"+ts+"-22";
+            }
+            if(classname=="auto_da"){
+                $(id).parent().prev().find('td')[0].innerText=fromstr;
+                $(id).parent().prev().find('td')[1].innerText=tostr;
+                alert("开始日期为："+fromstr+",结束日期为："+tostr);
+            }
+            if(classname=="auto_folder"){
+                $(id).parent().prev().find('td')[0].innerText=folderstr+"考勤/input";
+                $(id).parent().prev().find('td')[1].innerText=folderstr+"考勤/output";
+                alert("考勤存放文件目录为："+folderstr+"考勤/input"+",导出excel文件夹目录为："+folderstr+"考勤/output");
+            }
+            if(classname=="auto_exportexcelfile"){
+                $(id).parent().prev().find('td')[0].innerText=folderstr+"考勤第一次导出.xlsx";
+                $(id).parent().prev().find('td')[1].innerText=folderstr+"考勤第二次导出.xlsx";
+                alert("考勤第一次导出文件为："+folderstr+"考勤第一次导出.xlsx"+",考勤第二次导出文件为："+folderstr+"考勤第一次导出.xlsx");
+            }
+
+
+            skip(2);
+
+        }
+        function getexport(i) {
+
+            var all = {};
+            all.time = i;
+            $.ajax({
+                type: 'post',
+                url: 'http://localhost:8089/export',
+                data:JSON.stringify(all),
+                success: function (data){
+                    var rst = JSON.parse(data);
+                    if(rst["Code"]==1){
+                        alert("生成第"+i+"次excel成功，"+rst["Typename"]);
+                    }else{
+                        alert("生成excel失败");
+                    }
+                }
+            });
+        }
+
+        function getdocuplexport(i) {
+            var formData = new FormData();
+            formData.append('time', i)
+            if(i==2){//第二次生成需要上传第一次的文件
+                var domname = "export";
+                var uploadfile = $("#"+domname).val();
+                var uploadfileext = uploadfile.substring(uploadfile.lastIndexOf('.') + 1);
+                var filename= getFileName(uploadfile);
+                // alert("文件名是："+filename+",extension is:"+uploadfileext);
+                if(uploadfileext!='xlsx'){
+                    alert("上传文件必须是xlsx格式的，请重新上传");
+                    return;
+                }
+
+                formData.append('name', filename)
+                formData.append("file",$("#"+domname)[0].files[0]);
+            }
+            $.ajax({
+                url:'http://localhost:8089/docuplexport', /*接口域名地址*/
+                type:'post',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (data){
+                    var rst = JSON.parse(data);
+                    if(rst["Code"]==1){
+                        alert("生成第"+i+"次excel成功，"+rst["Typename"]);
+                    }else{
+                        alert("生成excel失败");
+                    }
+                }
+            });
+
+
+        }
+
+
+
+
+        //获取文件名方式一
+        function getFileName(file){//通过第一种方式获取文件名
+            var pos=file.lastIndexOf("\\");//查找最后一个\的位置
+            return file.substring(pos+1); //截取最后一个\位置到字符长度，也就是截取文件名
+        }
+
+        function upload(id){
+            var studio = {};
+            studio.changhua = 0;
+            studio.pudong = 1;
+            studio.maoming = 2;
+            studio.dingding = 3;
+
+		    var domname = $(id).prev().attr("id");//domname = "changhua"
+
+            var tdindex = studio[domname];
+            // var uploadfile = $("#changhua").val();
+            var uploadfile = $("#"+domname).val();
+            var uploadfileext = uploadfile.substring(uploadfile.lastIndexOf('.') + 1);
+            var filename= getFileName(uploadfile);
+            // alert("文件名是："+filename+",extension is:"+uploadfileext);
+            if(uploadfileext!='xlsx'){
+                alert("上传文件必须是xlsx格式的，请重新上传");
+                return;
+            }
+
+
+            var formData = new FormData();
+            formData.append('name', filename)
+            formData.append('type', domname)
+            formData.append("file",$("#"+domname)[0].files[0]);
+            $.ajax({
+                url:'http://localhost:8089/docpostdata', /*接口域名地址*/
+                type:'post',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success:function(res){
+                    var rst = JSON.parse(res.replace(/\'/g,"\""))
+                    console.log(rst);
+                    if(rst.data.code=="succ"){
+                        alert('上传成功');
+                        $(".smartTableDivexcelfile").find("td")[tdindex].innerText = filename;
+
+                    }else if(rst.data.code=="err"){
+                        alert('上传失败，请重新上传');
+                    }else{
+                        console.log(rst);
+                    }
+                }
+            });
+		}
+
+		
+</script>
+</body>
+</html>
